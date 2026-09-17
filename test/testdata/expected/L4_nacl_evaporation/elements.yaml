@@ -1,0 +1,63 @@
+# Expected results — L4_nacl_evaporation
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L4_nacl_evaporation.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+parts:
+  - {tag: B1, names: [water charge vessel],       archetype: fluid.tank.vertical}
+  - {tag: B2, names: [brine charge vessel],       archetype: fluid.tank.vertical}
+  - {tag: B3, names: [batch preparation, mixing], archetype: fluid.tank.vertical}
+  - {tag: B4, names: [buffer],                    archetype: fluid.tank.vertical}
+  - {tag: B5, names: [evaporator],                archetype: fluid.evaporator}
+  - {tag: K1, names: [condenser],                 archetype: fluid.condenser, required: true}
+  - {tag: B6, names: [condensate cooler],         archetype: fluid.tank.vertical}
+  - {tag: B7, names: [concentrate cooler],        archetype: fluid.tank.vertical}
+  - {tag: P1, names: [return pump 1],             archetype: fluid.pump}
+  - {tag: P2, names: [return pump 2],             archetype: fluid.pump}
+  - {tag: CTRL, names: [central controller, StateGraph], archetype: control.statemachine.sequential}
+
+valves_controller_owned: [V8, V9, V11, V12, V15, V18, V20, V22, V23, V24, V25, V1, V3, V5, V6]
+
+instruments:
+  - {tag: LIS-301, quantity: Length,      owner: B3}
+  - {tag: QI-302,  quantity: MassFraction, owner: B3}
+  - {tag: LIS-501, quantity: Length,      owner: B5}
+  - {tag: QIS-502, quantity: MassFraction, owner: B5}
+  - {tag: LIS-601, quantity: Length,      owner: B6}
+  - {tag: LIS-701, quantity: Length,      owner: B7}
+  - {tag: TIS-702, quantity: Temperature, owner: B7}
+  - {tag: FIS-801, quantity: MassFlowRate}
+  - {tag: PIS-901, quantity: Pressure,    owner: P1}
+  - {tag: PIS-1001, quantity: Pressure,   owner: P2}
+
+state_machine:
+  strategy: state_graph          # forced by regions > 1, not by case name
+  regions: [single, parallel_A, parallel_B]
+  states:
+    - {name: Initial, region: single}
+    - {name: Step1, region: single, action: "V8=OPEN",  guard: "LIS-301 >= 0.13"}
+    - {name: Step2, region: single, action: "V9=OPEN",  guard: "QI-302 >= 0.080"}
+    - {name: Step3, region: single, action: "V11=OPEN", guard: "LIS-301 < 0.01"}
+    - {name: Step4, region: single, action: "V12=OPEN", guard: "LIS-501 reaches batch level"}
+    - {name: Step5, region: single, action: "B5 heater ON", guard: "QIS-502 reaches target"}
+    - {name: Step6, region: single, action: split}
+    - {name: Step7, region: parallel_A, guard: "LIS-701 < 0.01"}
+    - {name: Step8, region: parallel_B, action: "V15=OPEN", guard: "LIS-501 < 0.01"}
+    - {name: Step9, region: parallel_B, action: "B7_Cooler=ON", guard: "TIS-702 <= 25"}
+    - {name: Step10_11, region: parallel_B, action: "P1=ON + CR-017 return valve group"}
+    - {name: Join, region: join, guard: "A complete AND B complete AND time > 2500"}
+
+required_elements:
+  - K1                      # must remain identifiable even if Modelica combines it with B5
+  - parallel_region_split
+  - parallel_region_join
+  - junction_volumes        # SA-NUM-001; mandated by URS section 4 and DR-07 decision 6

@@ -1,0 +1,59 @@
+# Expected results — L2_room_co2
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L2_room_co2.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+must_detect:
+  - id: co2_limit_interpretation
+    subject: Room CO2 compliance limit interpretation
+    positions:
+      - value: 1000 ppm absolute
+        authority_record: DR-IAQ-05
+        tier: 2
+        selected: true
+      - value: 1000 ppm above outdoor (~1300 ppm total)
+        authority_record: email 2026-02-10
+        tier: 9
+        record_status: rejected
+        selected: false
+    rule_applied: PRE-01-dropped-rejected
+    note: >-
+      The 1300 ppm position is dropped at step 1 of PRE-01 because DR-IAQ-05 rejects it by name.
+      It must remain visible in the ledger as a rejected position, not vanish.
+
+  - id: controller_gain
+    subject: Proportional gain Kp
+    positions:
+      - {value: 6.0, authority_record: CR-IAQ-007, tier: 1, selected: true}
+      - {value: 4.0, authority_record: legacy .mo,  tier: 11, status: archived, selected: false}
+    rule_applied: PRE-01-tier
+
+  - id: peak_occupancy
+    subject: Peak occupancy used by the reference run
+    positions:
+      - {value: 15, unit: person, authority_record: OCC-SCH-04 Rev C, tier: 7, selected: true}
+      - {value: 12, unit: person, authority_record: legacy .mo, tier: 11, status: archived, selected: false}
+    rule_applied: PRE-01-tier
+
+must_not_report:
+  - id: at_least_12_vs_peak_15
+    reason: >-
+      URS-IAQ-008 states 'at least 12 persons' - a lower bound. OCC-SCH-04 Rev C states an actual
+      peak of 15. A bound and a value are not contradictory.
+  - id: c_source_100_kgkg
+    reason: >-
+      peopleSource.C = 100 kg/kg is a numerical implementation device (DR-IAQ-05 decision 7),
+      not a competing physical concentration.
+  - id: negative_mflow
+    reason: >-
+      Negative source m_flow is a port sign convention, not a competing claim about physical
+      airflow direction.

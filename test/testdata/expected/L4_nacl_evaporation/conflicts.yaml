@@ -1,0 +1,61 @@
+# Expected results — L4_nacl_evaporation
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L4_nacl_evaporation.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+must_detect:
+  - id: return_routing
+    subject: Return stream destinations
+    positions:
+      - value: "B6 condensate -> B1; B7 concentrate -> B2"
+        authority_record: CR-017
+        tier: 1
+        effective_date: 2026-03-05
+        selected: true
+      - value: "B7/P1 -> B1 valve group; B6/P2 -> B2 valve group"
+        authority_record: archived StateGraph extract
+        tier: 11
+        status: superseded
+        selected: false
+    rule_applied: PRE-01-tier
+    note: >-
+      Not derivable from topology. The bottom headers are cross-connected, so pump physical
+      location is not the destination. Stream identity is stated in the URS.
+
+  - id: b7_cooling_temperature
+    subject: B7 concentrate cooling completion temperature
+    positions:
+      - {value: 25, unit: degC, authority_record: CR-017, tier: 1, selected: true}
+      - {value: 20, unit: degC, authority_record: handwritten commissioning sheet, tier: 10, selected: false}
+    rule_applied: PRE-01-tier
+
+must_not_report:
+  - id: standardwater_vs_waternacl
+    reason: >-
+      Two configurations, not competing claims. StandardWater is the integration baseline
+      (URS section 3, DR-07 decision 7); WaterNaCl is the intended physical medium.
+  - id: k1_combined_component
+    reason: >-
+      DR-07 decision 5 permits the legacy Modelica to combine evaporator and condenser equations
+      while requiring K1 to remain identifiable in the architecture. A simulation abstraction is
+      not a contradiction of the physical architecture.
+  - id: cr017_proposal_vs_approval
+    reason: >-
+      The 2026-03-03 message proposes CR-017; the 2026-03-05 message approves it. A proposal
+      followed by its own approval is not a conflict - only the approval transmits tier-1
+      authority.
+
+must_raise_open_question:
+  - id: controller_valve_ownership
+    reason: >-
+      The P&ID shows more valves than the StateGraph actuator bundle. Ownership is stated by the
+      ICD, not derivable from the drawing. Lab notebook raises this explicitly.

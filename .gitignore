@@ -1,0 +1,53 @@
+# Environment — never commit (docs/devenv.md §8)
+environment.bat
+environment.sh
+.env
+.env.local
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# uv
+uv.lock.bak
+
+# Build and cache
+build/cache/
+build/omc/*.mos
+build/schema/*.json
+
+# Run artifacts — generated per run.
+# Retained demo runs are force-added: git add -f runs/<run_id>
+runs/*
+!runs/.gitkeep
+
+# OpenModelica scratch
+*.libs
+*.log
+*.makefile
+*.o
+*_res.mat
+*_init.xml
+*_info.json
+temp_*/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json.example

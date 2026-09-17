@@ -1,0 +1,33 @@
+# Expected results — L1_two_tank
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L1_two_tank.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+effective_parameters:
+  - {name: T1_High,            value: 0.80,   unit: m,     authority: CR-004,        value_kind: effective_setpoint}
+  - {name: T1_Low,             value: 0.05,   unit: m,     authority: URS-001 Rev A, value_kind: effective_setpoint}
+  - {name: T2_Low,             value: 0.05,   unit: m,     authority: URS-001 Rev A, value_kind: effective_setpoint}
+  - {name: wait_after_fill,    value: 10,     unit: s,     authority: URS-001 Rev A, value_kind: effective_setpoint}
+  - {name: wait_after_transfer, value: 12,    unit: s,     authority: CR-004,        value_kind: effective_setpoint}
+  - {name: wait_after_drain,   value: 8,      unit: s,     authority: CR-004,        value_kind: effective_setpoint}
+  - {name: tank1_area,         value: 1.20,   unit: m2,    authority: MDS-01,        value_kind: nominal_design}
+  - {name: tank2_area,         value: 1.40,   unit: m2,    authority: MDS-01,        value_kind: nominal_design}
+  - {name: tank1_level_init,   value: 0.05,   unit: m,     authority: MDS-01,        value_kind: nominal_design}
+  - {name: tank2_level_init,   value: 0.05,   unit: m,     authority: MDS-01,        value_kind: nominal_design}
+  - {name: q_fill,             value: 0.0060, unit: m3/s,  authority: MDS-01,        value_kind: nominal_design}
+  - {name: q_transfer,         value: 0.0045, unit: m3/s,  authority: MDS-01,        value_kind: nominal_design}
+  - {name: q_drain,            value: 0.0050, unit: m3/s,  authority: MDS-01,        value_kind: nominal_design}
+
+must_not_select:
+  - {name: T1_High,            value: 0.78, reason: superseded by CR-004}
+  - {name: wait_after_transfer, value: 10,  reason: superseded by CR-004}
+  - {name: wait_after_drain,   value: 10,   reason: superseded by CR-004}

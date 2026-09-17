@@ -1,0 +1,43 @@
+# Expected results — L2_room_co2
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L2_room_co2.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+effective_parameters:
+  - {name: co2_limit_ppm,      value: 1000,      unit: ppm,     authority: URS-IAQ-004,  value_kind: requirement}
+  - {name: C_nominal,          value: 1.519e-3,  unit: kg/kg,   authority: CDS-IAQ-02,   value_kind: derived}
+  - {name: C_outdoor,          value: 4.557e-4,  unit: kg/kg,   authority: DR-IAQ-05,    value_kind: derived}
+  - {name: outdoor_co2_ppm,    value: 300,       unit: ppm,     authority: URS-IAQ-005,  value_kind: requirement}
+  - {name: room_volume,        value: 100,       unit: m3,      authority: URS-IAQ-001,  value_kind: nominal_design}
+  - {name: air_density,        value: 1.2,       unit: kg/m3,   authority: IAQ-PER-002,  value_kind: nominal_design}
+  - {name: co2_per_person,     value: 8.18e-6,   unit: kg/s,    authority: URS-IAQ-007,  value_kind: nominal_design}
+  - {name: gainSensor,         value: 658.327847, unit: 1/(kg/kg), authority: CDS-IAQ-02, value_kind: derived}
+  - {name: CO2Set,             value: 1.0,       dimensionless: true, authority: CDS-IAQ-02, value_kind: effective_setpoint}
+  - {name: Kp,                 value: 6.0,       dimensionless: true, authority: CR-IAQ-007, value_kind: effective_setpoint}
+  - {name: bias_ach,           value: 3.5,       unit: 1/h,     authority: CR-IAQ-007,   value_kind: effective_setpoint}
+  - {name: ach_min,            value: 0.2,       unit: 1/h,     authority: CR-IAQ-007,   value_kind: effective_setpoint}
+  - {name: ach_max,            value: 6.0,       unit: 1/h,     authority: CR-IAQ-007,   value_kind: effective_setpoint}
+  - {name: ach_to_massflow,    value: 0.033333,  unit: kg/s,    authority: CDS-IAQ-02,   value_kind: derived}
+  - {name: peak_occupancy,     value: 15,        unit: person,  authority: OCC-SCH-04 Rev C, value_kind: effective_setpoint}
+  - {name: C_source,           value: 100,       unit: kg/kg,   authority: MOD-NT-03,    value_kind: numerical_device}
+  - {name: sensor_fault_ach,   value: 4.0,       unit: 1/h,     authority: DR-IAQ-05,    value_kind: effective_setpoint}
+
+must_not_select:
+  - {name: Kp, value: 4.0, reason: superseded by CR-IAQ-007}
+  - {name: peak_occupancy, value: 12, reason: superseded by OCC-SCH-04 Rev C}
+  - {name: co2_limit_ppm, value: 1300, reason: interpretation rejected by DR-IAQ-05}
+
+required_declarations:
+  - {name: C_source, value_kind: numerical_device,
+     note: Must carry a comment stating it is not a physical concentration}
+  - {name: freshair_mflow_sign, declaration: negative_source_mflow_means_inflow,
+     note: Physical ventilation must be reported as a positive quantity}

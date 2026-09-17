@@ -1,0 +1,46 @@
+# Expected results — L2_room_co2
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L2_room_co2.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+parts:
+  - {tag: ZON-201,     names: [volume, room],         archetype: air.zone.wellmixed}
+  - {tag: SRC-OA-201,  names: [freshAir],             archetype: air.source.massflow}
+  - {tag: BND-201,     names: [boundary4],            archetype: air.boundary.pressure}
+  - {tag: SRC-CO2-201, names: [peopleSource],         archetype: air.source.trace}
+  - {tag: SCH-OCC-201, names: [NumberOfPeople],       archetype: control.schedule.piecewise}
+  - {tag: SEN-CO2-201, names: [traceVolume],          archetype: sensor.concentration}
+  - {tag: GAIN-NORM-201, names: [gainSensor],         archetype: control.gain}
+  - {tag: DUCT-IN-201, names: [supplyDuct],           archetype: air.duct}
+  - {tag: DUCT-OUT-201, names: [exhaustDuct],         archetype: air.duct}
+  - {tag: CTRL-201,    names: [PID, controller],      archetype: control.controller.p}
+  - {tag: LIM-201,     names: [limiter],              archetype: control.limiter}
+  - {tag: GAIN-ACH-201, names: [achToMassFlow],       archetype: control.gain}
+
+connections:
+  - {id: IF-AIR-01, from: SRC-OA-201.airPort,   to: DUCT-IN-201.port_a,  medium: moist_air_co2}
+  - {id: IF-AIR-02, from: DUCT-IN-201.port_b,   to: ZON-201.supplyPort,  medium: moist_air_co2}
+  - {id: IF-AIR-03, from: ZON-201.exhaustPort,  to: DUCT-OUT-201.port_a, medium: moist_air_co2}
+  - {id: IF-AIR-04, from: DUCT-OUT-201.port_b,  to: BND-201.airPort,     medium: moist_air_co2}
+  - {id: IF-TRC-01, from: SRC-CO2-201.tracePort, to: ZON-201.traceInjection, medium: co2_trace}
+  - {id: IF-SIG-01, from: SCH-OCC-201.nPeo,     to: SRC-CO2-201.scale,   medium: signal_real}
+  - {id: IF-SIG-02, from: ZON-201.traceState,   to: SEN-CO2-201.input,   medium: signal_real}
+  - {id: IF-SIG-03, from: SEN-CO2-201.C_room,   to: GAIN-NORM-201.u,     medium: signal_real}
+  - {id: IF-SIG-04, from: GAIN-NORM-201.y,      to: CTRL-201.measurement, medium: signal_real}
+  - {id: IF-SIG-05, from: CTRL-201.y,           to: LIM-201.u,           medium: signal_real}
+  - {id: IF-SIG-06, from: LIM-201.y,            to: GAIN-ACH-201.u,      medium: signal_real}
+  - {id: IF-SIG-07, from: GAIN-ACH-201.y,       to: SRC-OA-201.m_flow_in, medium: signal_real}
+
+modes: [AUTO_MIN, AUTO_CO2, AUTO_MAX, SENSOR_FAULT]
+
+notes:
+  - SENSOR_FAULT is required by DR-IAQ-05 decision 8 but is NOT exercised in the reference run.

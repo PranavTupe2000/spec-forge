@@ -1,0 +1,35 @@
+# Expected results — L4_nacl_evaporation
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L4_nacl_evaporation.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+effective_parameters:
+  - {name: charge_water_level,      value: 0.13,  unit: m,     authority: URS Rev A, signal: LIS-301}
+  - {name: brine_mix_target,        value: 0.080, unit: kg/kg, authority: URS Rev A, signal: QI-302}
+  - {name: buffer_transfer_empty,   value: 0.01,  unit: m,     authority: URS Rev A, signal: LIS-301}
+  - {name: heater_permissive_level, value: 0.05,  unit: m,     authority: DR-07,     signal: LIS-501}
+  - {name: heater_permissive_flow,  value: 0.10,  unit: kg/s,  authority: DR-07,     signal: FIS-801}
+  - {name: p1_permissive_level,     value: 0.02,  unit: m,     authority: CDS Rev B, signal: LIS-701}
+  - {name: p2_permissive_level,     value: 0.02,  unit: m,     authority: CDS Rev B, signal: LIS-601}
+  - {name: pump_low_pressure_alarm, value: 0.8,   unit: barg,  authority: CDS Rev B}
+  - {name: b6_cooling_complete,     value: 20,    unit: degC,  authority: CR-017}
+  - {name: b7_cooling_complete,     value: 25,    unit: degC,  authority: CR-017}
+  - {name: cycle_reset_time,        value: 2500,  unit: s,     authority: URS Rev A}
+  - {name: b5_heater_power,         value: 20000, unit: W,     authority: CDS Rev B}
+
+routing:
+  - {from: B6, stream: condensate,  to: B1, authority: CR-017}
+  - {from: B7, stream: concentrate, to: B2, authority: CR-017}
+
+must_not_select:
+  - {name: b7_cooling_complete, value: 20, reason: superseded by CR-017}
+  - {name: routing, value: "B6->B2, B7->B1", reason: superseded by CR-017}

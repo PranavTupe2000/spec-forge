@@ -1,0 +1,145 @@
+# Case manifest — L2_room_co2
+#
+# TEST FIXTURE METADATA, NOT PRODUCTION INPUT.
+# In production these fields are extracted from document content and this file is absent.
+# The manifest exists so ingestion and precedence can be tested independently of extraction
+# quality, and so the benchmark suite has a stated ground truth for what each document IS.
+#
+# Every case MUST also pass with --no-manifest (SF-SCP-02). See 04_ingestion_spec.md section 8.
+
+case_id: L2_room_co2
+level: L2
+title: "Room CO2 Ventilation Controller (RM-201)"
+reasoning_under_test: "Closed-loop feedback: disturbance, sensor, control law, actuator acting back on the process."
+spec: docs/specifications/benchmarks/L2_room_co2.md
+
+documents:
+  - path: 01_requirements/01_owner_iaq_requirements.pdf
+    document_number: URS-IAQ-001
+    revision: A
+    status: released
+    issued_date: 2026-01-08
+    authority_tier: 3
+    reliability: high
+
+  - path: 02_engineering_data/02_iaq_engineering_register.xlsx
+    document_number: REG-IAQ
+    revision: compiled
+    status: released
+    authority_tier: 4
+    reliability: high
+    precedence_sheets:
+      change_log: Change_Log
+      source_index: Source_Index
+      parameters: Parameter_Calculations
+      requirements: Requirements_Register
+      interfaces: Interface_Matrix
+
+  - path: 03_architecture_diagrams/03_reference_control_diagram.png
+    status: released
+    authority_tier: 8
+    reliability: medium
+    modality: image
+
+  - path: 03_architecture_diagrams/13_partial_existing_architecture.puml
+    status: draft
+    authority_tier: 8
+    reliability: medium
+    caveat: >-
+      Its note records that the draft assumes the sensor output is ppm; ICD-IAQ-03 later froze
+      the internal feedback interface in kg/kg and added a normalisation gain.
+
+  - path: 04_design_notes/04_control_sequence_and_modeling_notes.docx
+    document_number: CDS-IAQ-02 / MOD-NT-03
+    revision: B
+    status: released
+    issued_date: 2026-03-01
+    authority_tier: 3
+    reliability: high
+
+  - path: 04_design_notes/06_iaq_design_review_minutes.md
+    document_number: DR-IAQ-05
+    revision: Final
+    status: approved
+    issued_date: 2026-02-14
+    authority_tier: 2
+    reliability: high
+
+  - path: 04_design_notes/14_engineer_field_notes.txt
+    status: informal
+    issued_date: 2026-03-04
+    authority_tier: 10
+    reliability: low
+    caveat: Uncontrolled. Reports observed trend maximum 996.52 ppm - a fact, not a requirement.
+
+  - path: 05_correspondence/05_bms_controls_email_thread.eml
+    status: informal
+    issued_date: 2026-03-01
+    authority_tier: 9
+    reliability: medium
+    transmits:
+      - record: CR-IAQ-007
+        record_status: approved
+        inherited_tier: 1
+      - record: "1000 ppm above outdoor interpretation"
+        record_status: rejected
+        rejected_by: DR-IAQ-05
+    caveat: >-
+      Contains a genuine engineering opinion (1300 ppm total) that was later rejected by name.
+      A rejected record transmits no authority.
+
+  - path: 06_legacy_code/07_legacy_co2_control.mo
+    status: archived
+    authority_tier: 11
+    reliability: low
+    caveat: Carries Kp=4 and peak occupancy 12; both superseded.
+
+  - path: 07_datasheets/08_co2_sensor_datasheet.pdf
+    status: released
+    authority_tier: 5
+    reliability: high
+
+  - path: 08_commissioning/09_commissioning_test_procedure_CP23.pdf
+    document_number: CP-23
+    revision: C
+    status: released
+    authority_tier: 6
+    reliability: high
+    caveat: Verification input, not design authority.
+
+  - path: 09_datasets/10_occupancy_schedule.csv
+    document_number: OCC-SCH-04
+    revision: C
+    status: approved
+    authority_tier: 7
+    reliability: high
+    caveat: Peak 15 persons 13:00-15:00. Supersedes the legacy peak of 12.
+
+  - path: 09_datasets/11_reference_run_24h.csv
+    status: released
+    authority_tier: 7
+    reliability: high
+    role: reference_trace
+
+  - path: 09_datasets/12_bim_room_export.json
+    status: released
+    authority_tier: 7
+    reliability: medium
+
+reference_trace:
+  path: 09_datasets/11_reference_run_24h.csv
+  duration_s: 86400
+  expected:
+    peak_co2_ppm: 996.52
+    peak_time_approx: "14:59"
+    min_ach: 0.2
+    compliance_limit_ppm: 1000
+
+acceptance:
+  compile: required
+  simulate: required
+  stop_time_s: 86400
+  structural_coverage_min: 0.80
+  tolerances:
+    room_co2_ppm: {max_abs: 15.0}
+    ventilation_ach: {max_abs: 0.2}

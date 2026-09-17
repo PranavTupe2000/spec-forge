@@ -1,0 +1,65 @@
+# Expected results — L1_two_tank
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L1_two_tank.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+must_detect:
+  - id: t1_high_limit
+    subject: Tank 1 high level limit
+    quantity: Length
+    value_kind: effective_setpoint
+    positions:
+      - value: 0.80
+        unit: m
+        authority_record: CR-004
+        tier: 1
+        effective_date: 2026-03-11
+        selected: true
+      - value: 0.78
+        unit: m
+        authority_record: URS-001 Rev A
+        tier: 3
+        status: superseded
+        selected: false
+      - value: 0.78
+        unit: m
+        authority_record: SIM-LEGACY 1.2
+        tier: 11
+        status: archived
+        selected: false
+    rule_applied: PRE-01-tier
+
+  - id: wait_after_t1_low
+    subject: Wait after Tank 1 reaches low level
+    quantity: Time
+    positions:
+      - {value: 12, unit: s, authority_record: CR-004, tier: 1, selected: true}
+      - {value: 10, unit: s, authority_record: URS-001 Rev A, tier: 3, status: superseded, selected: false}
+    rule_applied: PRE-01-tier
+
+  - id: wait_after_t2_low
+    subject: Inter-cycle wait after Tank 2 reaches low level
+    quantity: Time
+    positions:
+      - {value: 8,  unit: s, authority_record: CR-004, tier: 1, selected: true}
+      - {value: 10, unit: s, authority_record: URS-001 Rev A, tier: 3, status: superseded, selected: false}
+    rule_applied: PRE-01-tier
+
+must_not_report:
+  - id: v2_v3_shutdown_exception
+    reason: >-
+      V2 and V3 opening together during SHUTDOWN is a scoped interlock exception approved in
+      DR-02 D-09, not a contradiction of the normal-operation interlock.
+  - id: shut_vs_estop
+    reason: >-
+      'shut' means controlled drain throughout. There is no competing emergency-stop definition
+      to conflict with; E-stop is simply out of scope.

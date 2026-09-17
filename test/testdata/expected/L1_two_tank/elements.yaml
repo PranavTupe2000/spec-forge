@@ -1,0 +1,59 @@
+# Expected results — L1_two_tank
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L1_two_tank.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+parts:
+  - {tag: TK-101,  names: [tank1, T1, "Tank 1"],         archetype: fluid.tank.vertical}
+  - {tag: TK-102,  names: [tank2, T2, "Tank 2"],         archetype: fluid.tank.vertical}
+  - {tag: XV-101,  names: [valve1, V1],                  archetype: fluid.valve.onoff}
+  - {tag: XV-102,  names: [valve2, V2],                  archetype: fluid.valve.onoff}
+  - {tag: XV-103,  names: [valve3, V3],                  archetype: fluid.valve.onoff}
+  - {tag: LT-101,  names: [level1],                      archetype: sensor.level}
+  - {tag: LT-102,  names: [level2],                      archetype: sensor.level}
+  - {tag: SRC-101, names: [source],                      archetype: fluid.source.flow}
+  - {tag: DRN-101, names: [ambient1, drain],             archetype: fluid.sink.boundary}
+  - {tag: PLC-101, names: [tankController, controller],  archetype: control.statemachine.sequential}
+
+connections:
+  - {id: IF-HYD-01, from: SRC-101.fluidOut, to: XV-101.inlet,  medium: liquid}
+  - {id: IF-HYD-02, from: XV-101.outlet,    to: TK-101.inlet,  medium: liquid}
+  - {id: IF-HYD-03, from: TK-101.outlet,    to: XV-102.inlet,  medium: liquid}
+  - {id: IF-HYD-04, from: XV-102.outlet,    to: TK-102.inlet,  medium: liquid}
+  - {id: IF-HYD-05, from: TK-102.outlet,    to: XV-103.inlet,  medium: liquid}
+  - {id: IF-HYD-06, from: XV-103.outlet,    to: DRN-101.fluidIn, medium: liquid}
+  - {id: IF-CTL-01, from: LT-101.AI_101,    to: PLC-101.level1, medium: signal_real}
+  - {id: IF-CTL-02, from: LT-102.AI_102,    to: PLC-101.level2, medium: signal_real}
+  - {id: IF-CMD-01, from: PLC-101.DO_101,   to: XV-101.cmd,    medium: signal_boolean}
+  - {id: IF-CMD-02, from: PLC-101.DO_102,   to: XV-102.cmd,    medium: signal_boolean}
+  - {id: IF-CMD-03, from: PLC-101.DO_103,   to: XV-103.cmd,    medium: signal_boolean}
+  - {id: IF-CMD-04, from: PB-START.DI_101,  to: PLC-101.cmdStart, medium: signal_boolean}
+  - {id: IF-CMD-05, from: PB-STOP.DI_102,   to: PLC-101.cmdStop,  medium: signal_boolean}
+  - {id: IF-CMD-06, from: PB-SHUT.DI_103,   to: PLC-101.cmdShut,  medium: signal_boolean}
+
+states:
+  - {name: IDLE,                outputs: [0, 0, 0]}
+  - {name: FILL_T1,             outputs: [1, 0, 0]}
+  - {name: WAIT_AFTER_FILL,     outputs: [0, 0, 0]}
+  - {name: TRANSFER_T1_T2,      outputs: [0, 1, 0]}
+  - {name: WAIT_AFTER_TRANSFER, outputs: [0, 0, 0]}
+  - {name: DRAIN_T2,            outputs: [0, 0, 1]}
+  - {name: WAIT_AFTER_DRAIN,    outputs: [0, 0, 0]}
+  - {name: PAUSED,              outputs: [0, 0, 0]}
+  - {name: SHUTDOWN,            outputs: [0, 1, 1]}
+
+constraints:
+  - {kind: interlock, expression: "not (cmd_v1 and cmd_v2)", scope: global,  exceptions: []}
+  - {kind: interlock, expression: "not (cmd_v2 and cmd_v3)", scope: global,  exceptions: [state:SHUTDOWN]}
+
+command_priority: [SHUT, STOP, START]
+timer_suspend_semantics: freeze_remaining

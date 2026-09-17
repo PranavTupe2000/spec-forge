@@ -1,0 +1,39 @@
+# Expected results — L3_magnetic_circuit
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L3_magnetic_circuit.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+parts:
+  - {names: [CurrentRamp, currentSource],   archetype: electrical.source.current}
+  - {names: [ExcitingCoil],                 archetype: magnetic.coil.exciting}
+  - {names: [MeasuringCoil],                archetype: magnetic.coil.measuring}
+  - {names: [LeftLeg],                      archetype: magnetic.fluxtube.iron}
+  - {names: [UpperYoke],                    archetype: magnetic.fluxtube.iron}
+  - {names: [RightLegIron],                 archetype: magnetic.fluxtube.iron}
+  - {names: [LowerYoke],                    archetype: magnetic.fluxtube.iron}
+  - {names: [AirGap, GAP-1],                archetype: magnetic.airgap}
+  - {names: [Leakage, LEAK-1],              archetype: magnetic.fluxtube.leakage}
+  - {names: [FluxSensor],                   archetype: sensor.flux}
+  - {names: [ElectricGround],               archetype: electrical.ground}
+  - {names: [MagneticGround],               archetype: magnetic.ground.magnetic}
+
+topology:
+  series_path: [LeftLeg, UpperYoke, RightLegIron]
+  parallel_branch:
+    shares: magnetic_potential_difference
+    members: [AirGap, Leakage]
+    rejoins_before: LowerYoke
+
+required_elements:
+  - Leakage        # omitted by the draft .puml; mandated by DR-MAG-03 decision 3
+  - ElectricGround # omitted by the draft .puml; mandated by DR-MAG-03 decision 8
+  - MagneticGround # omitted by the draft .puml; mandated by DR-MAG-03 decision 8

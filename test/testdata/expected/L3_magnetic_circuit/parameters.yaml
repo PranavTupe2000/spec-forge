@@ -1,0 +1,55 @@
+# Expected results — L3_magnetic_circuit
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L3_magnetic_circuit.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+effective_parameters:
+  - {name: mu_r,                value: 1200,  dimensionless: true, authority: CR-MAG-004, value_kind: nominal_design}
+  - {name: sigma,               value: 0.08,  dimensionless: true, authority: CR-MAG-006, value_kind: nominal_design}
+  - {name: N_exciting,          value: 600,   unit: turns, authority: Coil Data Rev B, value_kind: nominal_design}
+  - {name: N_measuring,         value: 50,    unit: turns, authority: Coil Data Rev B, value_kind: nominal_design}
+  - {name: a_core_side,         value: 25,    unit: mm,    authority: SRS Rev A, value_kind: nominal_design}
+  - {name: l_reference,         value: 150,   unit: mm,    authority: SRS Rev A, value_kind: nominal_design}
+  - {name: delta_air_gap,       value: 1.50,  unit: mm,    authority: Drawing MC-101, value_kind: nominal_design}
+
+# Retained separately, NOT as a competing candidate for delta_air_gap.
+separate_configurations:
+  - name: as_built_prototype
+    parameters:
+      - {name: delta_air_gap, value: 1.58, unit: mm, authority: metrology note,
+         value_kind: as_built_measurement}
+    note: >-
+      DR-MAG-03 decision 5. Parameterises the lab validation runbook configuration only.
+      Must never replace the nominal analytic value.
+
+derived_relations:
+  - {name: phi_gap,  expression: "(1 - sigma) * phi_core", note: "sigma = 0.08 -> 0.92"}
+  - {name: R_leak,   expression: "R_gap * (1 - sigma) / sigma"}
+  - {name: Rm,       expression: "length / (mu0 * mu_r * A)"}
+  - {name: B,        expression: "phi / A"}
+  - {name: H,        expression: "B / (mu0 * mu_r)"}
+  - {name: Vm,       expression: "H * length"}
+  - {name: U,        expression: "2 * pi * f * N * abs(phi)"}
+
+geometry:
+  - {element: left_leg,       area: "a*a", length: "l - a",         mu_r: mu_r}
+  - {element: upper_yoke,     area: "a*a", length: "l - a",         mu_r: mu_r}
+  - {element: right_leg_iron, area: "a*a", length: "l - a - delta", mu_r: mu_r}
+  - {element: air_gap,        area: "a*a", length: "delta",         mu_r: 1}
+  - {element: lower_yoke,     area: "a*a", length: "l - a",         mu_r: mu_r}
+
+conventions:
+  current_input: rms_phasor_magnitude
+  exciting_coil_orientation: positive
+  measuring_coil_orientation: negative
+
+excluded_from_baseline: [saturation, hysteresis, eddy_current_loss, force_interaction]

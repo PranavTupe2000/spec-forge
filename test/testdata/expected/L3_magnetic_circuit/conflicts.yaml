@@ -1,0 +1,47 @@
+# Expected results — L3_magnetic_circuit
+#
+# Ground truth for the benchmark suite. Derived from the supplied bundle by manual analysis;
+# see docs/specifications/benchmarks/L3_magnetic_circuit.md for the reasoning behind each entry.
+#
+# Used by:
+#   test/unit/evidence/test_expected_conflicts.py
+#   test/unit/test_structural_coverage.py
+#   test/unit/evidence/test_effective_parameters.py
+#
+# Matching is alias-aware: a generated element matches a reference element if its canonical
+# name, tag, or any alias matches any accepted name here.
+
+
+must_detect:
+  - id: relative_permeability
+    subject: Relative permeability mu_r
+    positions:
+      - {value: 1200, authority_record: CR-MAG-004, tier: 1, selected: true}
+      - {value: 1000, authority_record: CoreCatalog_A, tier: 5, status: superseded, selected: false}
+    rule_applied: PRE-01-tier
+
+  - id: leakage_coefficient
+    subject: Leakage coefficient sigma
+    positions:
+      - {value: 0.08, authority_record: CR-MAG-006, tier: 1, effective_date: 2026-02-26, selected: true}
+      - {value: 0.05, authority_record: legacy model v1.0, tier: 11, status: archived, selected: false}
+    rule_applied: PRE-01-tier
+
+  - id: measuring_coil_turns
+    subject: Measuring coil turns
+    positions:
+      - {value: 50, authority_record: Coil Data Rev B, tier: 5, selected: true}
+      - {value: 40, authority_record: old measurement-coil sketch, tier: 8, status: superseded, selected: false}
+    rule_applied: PRE-01-tier-then-date
+
+must_not_report:
+  - id: air_gap_nominal_vs_asbuilt
+    reason: >-
+      1.50 mm is nominal_design (drawing MC-101, analytic benchmark); 1.58 mm is
+      as_built_measurement (metrology, physical shim stack). Different value_kind, so they are
+      never merged. DR-MAG-03 decision 5 and decision 10 require BOTH to be retained.
+      Reporting this as a conflict is a false positive and a test failure.
+  - id: rms_vs_peak_current
+    reason: >-
+      2 A rms and 2.828 A peak are the same quantity in two representations, noted in the scratch
+      notes as a conversion warning. The model input convention is RMS phasor magnitude.

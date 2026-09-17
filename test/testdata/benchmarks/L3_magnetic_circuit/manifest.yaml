@@ -1,0 +1,140 @@
+# Case manifest — L3_magnetic_circuit
+#
+# TEST FIXTURE METADATA, NOT PRODUCTION INPUT.
+# In production these fields are extracted from document content and this file is absent.
+# The manifest exists so ingestion and precedence can be tested independently of extraction
+# quality, and so the benchmark suite has a stated ground truth for what each document IS.
+#
+# Every case MUST also pass with --no-manifest (SF-SCP-02). See 04_ingestion_spec.md section 8.
+
+case_id: L3_magnetic_circuit
+level: L3
+title: "Quasi-Static Magnetic Circuit"
+reasoning_under_test: "Multiphysics energy transfer across domains, with an explicit loss path."
+spec: docs/specifications/benchmarks/L3_magnetic_circuit.md
+
+documents:
+  - path: 01_requirements/01_system_requirement_specification.pdf
+    document_number: SRS-MAG
+    revision: A
+    status: released
+    authority_tier: 3
+    reliability: high
+    caveat: Parameter values in later approved change records override conflicting values here.
+
+  - path: 02_engineering_data/02_magnetic_engineering_register.xlsx
+    document_number: REG-MAG
+    revision: compiled
+    status: released
+    authority_tier: 4
+    reliability: high
+
+  - path: 03_architecture_diagrams/03_reference_magnetic_circuit.png
+    status: released
+    authority_tier: 8
+    reliability: medium
+    modality: image
+
+  - path: 03_architecture_diagrams/11_partial_magnetic_architecture.puml
+    status: draft
+    authority_tier: 8
+    reliability: medium
+    caveat: >-
+      Its note states the draft does not expose the leakage branch, element-wise core
+      segmentation, the electric ground, the magnetic ground, or revision values.
+
+  - path: 04_design_notes/04_model_definition_notes.docx
+    revision: C
+    status: released
+    authority_tier: 3
+    reliability: high
+    caveat: Section 6 tabulates legacy vs released values with their authorising change records.
+
+  - path: 04_design_notes/06_design_review_minutes.md
+    document_number: DR-MAG-03
+    revision: Final
+    status: approved
+    issued_date: 2026-03-12
+    authority_tier: 2
+    reliability: high
+
+  - path: 04_design_notes/13_flux_tube_theory_note.pdf
+    status: released
+    authority_tier: 5
+    reliability: high
+
+  - path: 04_design_notes/15_engineer_scratch_notes.txt
+    status: informal
+    authority_tier: 10
+    reliability: low
+    caveat: Header reads "Engineer scratchpad - uncontrolled".
+
+  - path: 05_correspondence/05_magnetics_email_thread.eml
+    status: informal
+    issued_date: 2026-02-26
+    authority_tier: 9
+    reliability: medium
+    transmits:
+      - record: CR-MAG-004
+        record_status: approved
+        inherited_tier: 1
+      - record: CR-MAG-006
+        record_status: approved
+        effective_date: 2026-02-26
+        inherited_tier: 1
+
+  - path: 06_legacy_code/07_legacy_magnetic_circuit.mo
+    revision: "1.0"
+    status: archived
+    authority_tier: 11
+    reliability: low
+    caveat: sigma=0.05, mu_r=1000, measuring turns 40 - all superseded.
+
+  - path: 07_datasheets/08_core_coil_datasheet.pdf
+    document_number: Coil Data
+    revision: B
+    status: released
+    authority_tier: 5
+    reliability: high
+    caveat: Measuring coil 50 turns, with polarity dots. Supersedes the 40-turn sketch.
+
+  - path: 08_commissioning/09_analytic_verification_procedure.pdf
+    document_number: AV-11
+    status: released
+    authority_tier: 6
+    reliability: high
+    caveat: Verification input, not design authority.
+
+  - path: 08_commissioning/14_lab_validation_runbook.docx
+    status: released
+    authority_tier: 6
+    reliability: high
+    caveat: Defines the as-built prototype validation configuration (delta = 1.58 mm).
+
+  - path: 09_datasets/10_quasistatic_ramp_results.csv
+    status: released
+    authority_tier: 7
+    reliability: high
+    role: reference_results
+
+  - path: 09_datasets/12_geometry_metrology_export.json
+    status: released
+    authority_tier: 7
+    reliability: high
+    caveat: >-
+      As-built measurement. MUST NOT replace nominal_design values. See DR-MAG-03 decision 5
+      and decision 10.
+
+acceptance:
+  compile: required
+  simulate: optional
+  verification: analytic
+  structural_coverage_min: 0.80
+  required_elements:
+    - leakage_branch
+    - electric_ground
+    - magnetic_ground
+  tolerances:
+    flux_wb: {rel: 0.02}
+    flux_density_t: {rel: 0.02}
+    induced_voltage_v: {rel: 0.02}

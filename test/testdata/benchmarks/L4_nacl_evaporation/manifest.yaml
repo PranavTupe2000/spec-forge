@@ -1,0 +1,153 @@
+# Case manifest — L4_nacl_evaporation
+#
+# TEST FIXTURE METADATA, NOT PRODUCTION INPUT.
+# In production these fields are extracted from document content and this file is absent.
+# The manifest exists so ingestion and precedence can be tested independently of extraction
+# quality, and so the benchmark suite has a stated ground truth for what each document IS.
+#
+# Every case MUST also pass with --no-manifest (SF-SCP-02). See 04_ingestion_spec.md section 8.
+
+case_id: L4_nacl_evaporation
+level: L4
+title: "Water / NaCl Evaporation Plant"
+reasoning_under_test: "Integration: supply, heating, transformation, separation into two streams, one coordinating controller."
+spec: docs/specifications/benchmarks/L4_nacl_evaporation.md
+
+documents:
+  - path: 01_requirements/01_process_requirement_specification.pdf
+    document_number: URS-NACL
+    revision: A
+    status: released
+    authority_tier: 3
+    reliability: high
+
+  - path: 02_engineering_data/02_process_data_register.xlsx
+    document_number: REG-NACL
+    revision: compiled
+    status: released
+    authority_tier: 4
+    reliability: high
+
+  - path: 03_architecture_diagrams/03_reference_PID.png
+    status: released
+    authority_tier: 8
+    reliability: medium
+    modality: image
+    caveat: Shows both controller-operated and manual/local valves. Ownership is not derivable from the drawing.
+
+  - path: 03_architecture_diagrams/11_legacy_architecture.puml
+    status: draft
+    authority_tier: 8
+    reliability: medium
+
+  - path: 04_design_notes/04_control_sequence_design.docx
+    revision: B
+    status: released
+    authority_tier: 3
+    reliability: high
+    caveat: Section 5 explicitly records that CR-017 supersedes the archived StateGraph routing.
+
+  - path: 04_design_notes/06_design_review_minutes.md
+    document_number: DR-07
+    revision: Final
+    status: approved
+    issued_date: 2026-02-21
+    authority_tier: 2
+    reliability: high
+
+  - path: 04_design_notes/13_water_nacl_medium_notes.pdf
+    status: released
+    authority_tier: 5
+    reliability: high
+
+  - path: 04_design_notes/15_lab_notebook.txt
+    status: informal
+    issued_date: 2026-04-01
+    authority_tier: 10
+    reliability: low
+    caveat: >-
+      Uncontrolled. Records that WaterNaCl fails at pump start and that pump states must not be
+      deleted. Also raises controller valve-ownership as an open action.
+
+  - path: 05_correspondence/05_process_controls_email_thread.eml
+    status: informal
+    issued_date: 2026-03-05
+    authority_tier: 9
+    reliability: medium
+    transmits:
+      - record: CR-017
+        record_status: proposed
+        proposed_date: 2026-03-03
+        inherited_tier: 9
+      - record: CR-017
+        record_status: approved
+        effective_date: 2026-03-05
+        inherited_tier: 1
+    caveat: >-
+      CR-017 appears first as a proposal ("I will raise CR-017") and only later as an approval
+      from a different author. Only the approval transmits tier-1 authority.
+
+  - path: 06_legacy_code/07_legacy_evaporation_plant.mo
+    status: archived
+    authority_tier: 11
+    reliability: low
+    caveat: Superseded return routing; combines evaporator and condenser equations.
+
+  - path: 07_datasheets/08_valve_pump_datasheet.pdf
+    status: released
+    authority_tier: 5
+    reliability: high
+
+  - path: 08_commissioning/09_batch_acceptance_test.pdf
+    status: released
+    authority_tier: 6
+    reliability: high
+    caveat: Verification input, not design authority.
+
+  - path: 08_commissioning/14_operator_runbook.docx
+    status: released
+    authority_tier: 6
+    reliability: medium
+
+  - path: 09_datasets/10_batch_run_3000s.csv
+    status: released
+    authority_tier: 7
+    reliability: high
+    role: reference_trace
+
+  - path: 09_datasets/12_layout_coordinates.json
+    status: released
+    authority_tier: 7
+    reliability: medium
+    role: spatial_layout
+
+reference_trace:
+  path: 09_datasets/10_batch_run_3000s.csv
+  duration_s: 3000
+  requires_cycle_reset_after_s: 2500
+
+configurations:
+  - name: StandardWater
+    role: integration_baseline
+    compile: required
+    simulate: required
+    note: Topology and sequence verification baseline, per URS section 3 and DR-07 decision 7.
+  - name: WaterNaCl
+    role: intended_physical
+    compile: required
+    simulate: known_issue
+    note: >-
+      Convergence failure at pump start is a known open issue (A-19). Report honestly as a gap;
+      do not claim a working model.
+
+acceptance:
+  compile: required
+  simulate: required
+  simulate_configuration: StandardWater
+  stop_time_s: 3000
+  structural_coverage_min: 0.80
+  required_elements:
+    - K1_identifiable_condenser
+    - parallel_region_split
+    - parallel_region_join
+    - junction_volumes
