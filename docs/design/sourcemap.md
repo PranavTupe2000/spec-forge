@@ -12,9 +12,14 @@
 
 ## Status
 
-The package skeleton exists (Phase 0 item 2), plus the first real implementation files: the omc
-and SysML v2 toolchain wrappers, `doctor`, and the `spec-forge` CLI entry point (Phase 0 items 3,
-4, 6). Everything else in the planned table below is still unwritten.
+**Phase 0 is complete** (all 8 items, all 5 exit criteria verified — see `docs/implementation_plan.md`
+and `DECISIONS.md` D1-D16). What exists: the `uv` project and full package skeleton; the `omc` and
+SysML v2 (conda-forge `jupyter-sysml-kernel`) toolchain wrappers, both proven end to end against the
+real toolchain, not mocked; `doctor` and the `spec-forge` CLI (`doctor`, `db upgrade`); the eight-test
+architecture suite (`test/unit/architecture/`); Postgres via Docker Compose, Alembic with an empty
+baseline migration; GitHub Actions CI (green on a real run, both jobs) plus the daily-decisions gate.
+**Phase 1 has not been started** — everything else in the planned table below is still unwritten, and
+per `.agents/workingrules.md` it stays that way until explicitly asked for.
 
 The table below is the **planned** allocation — where each responsibility belongs when it is written. Use it to
 decide where a new file goes. **When you create a file, move its row into the Sourcemap Index below and give it
@@ -97,7 +102,6 @@ the real purpose from its Purpose comment.**
 | `spec_forge/toolchain/omc.py` | The compile gate: drives `omc`, parses its stdout into structured diagnostics. Never trusts the process exit code — confirmed empirically to be 0 even on total failure |
 | `spec_forge/toolchain/sysml.py` | Wraps the SysML v2 toolchain via `SYSML_TOOL_CMD` (the installed conda-forge Jupyter kernel) — builds a probe notebook per model, parses its output; same exit-code caveat as omc |
 | `spec_forge/toolchain/doctor.py` | Aggregates every environment probe (Python, uv, omc, MSL, SysML, Postgres, Anthropic key, runs/build writability) into one `DoctorReport` |
-| `spec_forge/cli/main.py` | Typer CLI entry point (`spec-forge` script) — currently just the `doctor` command |
 | `test/unit/architecture/test_layer_dependencies.py` | Enforces the L0-L6 layer rule (packagedesign.md §3) via AST import analysis |
 | `test/unit/toolchain/test_omc.py` | omc wrapper tests — parser unit tests against real captured `omc` stdout, plus a real end-to-end compile of a hand-written model |
 | `test/unit/toolchain/test_sysml.py` | SysML wrapper tests — parser unit tests against real captured kernel output, plus a real end-to-end parse of a hand-written model |
@@ -112,11 +116,25 @@ the real purpose from its Purpose comment.**
 | `test/unit/architecture/test_no_db_mode.py` | A7, `xfail` — `spec-forge run --no-db` doesn't exist yet (Phase 1) |
 | `test/unit/architecture/test_agent_count.py` | ADR-004/D3, `xfail` — `pipeline/graph.py` doesn't exist yet (Phase 1) |
 | `spec_forge/persistence/migrations/env.py` | Alembic migration environment — reads `DATABASE_URL` from the environment, fails loudly if unset |
+| `spec_forge/persistence/migrations/script.py.mako` | Alembic's revision template — unmodified generated boilerplate, used by `alembic revision` |
+| `spec_forge/persistence/migrations/README` | Alembic's own generated readme (generic-single-database note) |
 | `spec_forge/persistence/migrations/versions/92dd1b8012fb_baseline.py` | The empty baseline migration — establishes the revision chain; the real schema starts in Phase 1 |
 | `spec_forge/persistence/migrations_runner.py` | `run_upgrade()` — wraps `alembic upgrade`; `MigrationError` is a hard stop, unlike a toolchain liveness check |
-| `spec_forge/cli/main.py` | + `db upgrade` command (13_data_model_spec.md §4) |
+| `spec_forge/cli/main.py` | Typer CLI entry point (`spec-forge` script) — `doctor` and `db upgrade` (`db_app` sub-command group) |
 | `test/unit/persistence/test_migrations_runner.py` | Mocked-Alembic failure-wrapping tests, plus a real `alembic upgrade head` against the docker-compose `postgres:16` container |
 | `test/unit/cli/test_db_upgrade_command.py` | `spec-forge db upgrade`'s exit code matches `migrations_runner`'s result/error |
 | `scripts/check_decisions_daily.py` | Fails if `DECISIONS.md` has no commit for some day between the repo's start date and today (14_acceptance_criteria_and_evaluation.md §6) |
 | `test/unit/test_check_decisions_daily.py` | Pure `compute_missing_days` tests, plus a real run against this repo's actual git history |
-| `.github/workflows/ci.yml` | `test` job (ruff/mypy/pytest/`db upgrade`/`doctor`, real `omc` + SysML kernel + postgres provisioned) and `decisions` job (the daily-commit gate, `TZ` pinned to IST) |
+| `.github/workflows/ci.yml` | `test` job (ruff/mypy/pytest/`db upgrade`/`doctor`, real `omc` + SysML kernel + postgres provisioned) and `decisions` job (the daily-commit gate, `TZ` pinned to IST). Verified green on a real run after fixing two bugs the first run caught — MSL not bundled by `apt install omc`, and a `$CONDA_PREFIX` path error (AI-LOG A1, DECISIONS.md D16) |
+
+## Project configuration
+
+Not "source code" in the navigable sense above, but created this phase and worth indexing.
+
+| Path | Purpose |
+|---|---|
+| `pyproject.toml` | Project metadata, dependencies, `ruff`/`mypy`/`pytest` config, the `spec-forge` script entry point |
+| `.python-version` | Pins `uv`'s resolved Python to 3.11 (NFR-PORT-02) |
+| `docker-compose.yml` | `postgres:16` service — db/user/password `specforge`, port 5432, healthcheck |
+| `.env.example` | Template for `.env` — `ANTHROPIC_API_KEY`, `DATABASE_URL`, `OPENMODELICA_HOME`, `SYSML_TOOL_CMD` |
+| `alembic.ini` | Points Alembic at `src/spec_forge/persistence/migrations` |
