@@ -74,3 +74,6 @@ D14 | CI's daily-decisions job pins `TZ: Asia/Kolkata` rather than writing timez
 
 D15 | CI provisions the real toolchain (`omc` + the SysML kernel) so `spec-forge doctor`'s exit code genuinely gates the `test` job
     | A non-blocking `doctor` step (`continue-on-error`) lost — `doctor` already scores both toolchains as equally blocking (D10); letting CI wave that through would make the local hard gate meaningless in CI, the one place a regression should be caught before it reaches a teammate
+
+D16 | CI's OpenModelica step pre-installs MSL via `libraries: 'Modelica 4.1.0+maint.om'`, and the SysML env vars use `$CONDA_PREFIX` directly, not `$CONDA_PREFIX/envs/sysml`
+    | Assuming Windows-installer parity (MSL bundled) and assuming `$CONDA_PREFIX` meant the miniconda root both lost — apt-installed `omc` ships no MSL, and `activate-environment: sysml` already makes `$CONDA_PREFIX` the activated env's own path; only a real Actions run caught either (AI-LOG A1)
