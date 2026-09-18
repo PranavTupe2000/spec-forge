@@ -117,8 +117,3 @@ Nothing in `src/` branches on a case name — the pipeline is the same for all f
 
 Python 3.11 · LangGraph · Claude (Anthropic API) · Pydantic v2 · FastAPI · PostgreSQL · React + ShadCN +
 React Three Fiber · OpenModelica + MSL · SysML v2 pilot toolchain · uv · PyTest
-
-## Credits
-
-Project scaffold from the [Thinking Craftsman Agentic Engineering template](https://github.com/nitinbhide/tcaitoolkit)
-by Nitin Bhide. Benchmark datasets supplied by the hackathon organisers as synthetic engineering evidence.

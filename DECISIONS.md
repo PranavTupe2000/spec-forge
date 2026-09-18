@@ -41,3 +41,36 @@ D3 | PRD §8's "how is agentic behaviour used" row corrected to say repair + cla
 
 D4 | Start date for the daily decision-log rule is today, 2026-09-17 — matches the repo's actual first commit (d279f84), so no backfill is needed
    | Anchoring to "PRD date" or "kickoff meeting" lost because neither is written down anywhere as an actual date; the first commit is the only unambiguous timestamp that exists
+
+D5 | pyproject.toml declares no third-party runtime deps yet — added incrementally per phase as each module first imports one, not the full ARCHITECTURE.md stack today
+   | Pre-declaring everything now lost on the counter-argument that nothing beyond `__init__.py` exists yet to conflict; better to surface a dependency clash the day a module actually needs the package
+
+D6 | mypy strictness (NFR-MNT-04) is scoped via `[[tool.mypy.overrides]]` to `core.*`/`emit.*`, with a non-strict-but-annotated baseline everywhere else
+   | A blanket `--strict` across the whole tree lost — it would block every file outside core/emit from type-checking at all until fully strict-typed, which the spec never asked for
+
+D7 | Data-only leaf dirs (`library/archetypes/`, `library/local/`, both `templates/` dirs, `pipeline/prompts/`) stay plain `.gitkeep`'d dirs, not `__init__.py` packages; `emit/modelica/strategies/` does get one
+   | Turning data dirs into importable packages lost — sourcemap.md already calls them "data, not code," and an empty Python package there would misrepresent what's inside
+
+D8 | Cross-cutting rule-enforcement tests (`test_layer_dependencies.py`, and future ones like it) live under `test/unit/architecture/`
+   | AGENTS.md's flat `test/unit/test_no_case_specific_logic.py` example lost — that directory was already pre-scaffolded for exactly this purpose, mirroring the one-dir-per-package pattern used everywhere else in `test/unit/`
+
+D9 | omc's compile-gate success/failure is read entirely from parsed stdout, never omc's own process exit code
+   | Trusting the exit code lost — confirmed empirically it stays 0 even when `checkModel` fails outright (missing class, syntax error); a return-code check would have shipped a gate that always says green
+
+D10 | `doctor` scores `omc` and the SysML toolchain as equally blocking (`error`), Postgres and the Anthropic key as `warn`
+    | Treating all checks as equally blocking lost — A7 requires the pipeline to run without the DB, and Postgres/`.env` aren't wired up yet (Phase 0 item 5); failing doctor on them would be a false red
+
+D11 | SysML v2 toolchain: installed conda-forge's `jupyter-sysml-kernel`, wrapped via a hand-built probe-notebook + `nbconvert --execute`
+    | The "primary" `SysML-v2-Pilot-Implementation` repo lost — it turned out to be an Eclipse RCP GUI plugin with no headless CLI at all, unusable from a subprocess wrapper
+
+D12 | `environment.bat`/`.sh` force `JAVA_HOME` to the conda env's own JDK, ahead of system Java, before running the SysML kernel
+    | Leaving PATH as-is lost — the kernelspec invokes a bare `java` with no version pin of its own, silently picked up the pre-existing system Java 17, and failed with `UnsupportedClassVersionError` (needs 21+)
+
+D13 | `spec-forge db upgrade` treats a failed migration as a hard stop (`MigrationError`, non-zero exit), not a reportable status
+    | Degrade-and-continue (matching toolchain liveness checks) lost — a half-applied schema is not a state the CLI should shrug off and keep going; the command must fail loudly, not report "degraded" and proceed
+
+D14 | CI's daily-decisions job pins `TZ: Asia/Kolkata` rather than writing timezone-conversion logic into `check_decisions_daily.py`
+    | Converting each commit's recorded offset to UTC in the script lost — the runner's own clock matching the team's calendar day is simpler, and it's what a human reading `git log` would assume "today" means anyway
+
+D15 | CI provisions the real toolchain (`omc` + the SysML kernel) so `spec-forge doctor`'s exit code genuinely gates the `test` job
+    | A non-blocking `doctor` step (`continue-on-error`) lost — `doctor` already scores both toolchains as equally blocking (D10); letting CI wave that through would make the local hard gate meaningless in CI, the one place a regression should be caught before it reaches a teammate

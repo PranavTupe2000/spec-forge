@@ -1,0 +1,109 @@
+# Purpose: Phase 0 item 7 — lint, type-check, test, and spec-forge doctor on every push/PR, plus
+# the DECISIONS.md daily-commit gate (14_acceptance_criteria_and_evaluation.md §6). `test` provisions
+# the real toolchain (omc, the SysML conda-forge kernel, a native postgres:16 service) so `doctor`'s
+# exit code genuinely gates the job — the same "no working around the hard gate" standard the
+# toolchain wrappers themselves hold to. `decisions` is a separate, fast job: it needs only git
+# history and stdlib Python, not the heavy toolchain, so it never waits on an unrelated install.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  DATABASE_URL: postgresql+psycopg://specforge:specforge@localhost:5432/specforge
+  SYSML_TOOL_CMD: >-
+    jupyter nbconvert --to notebook --execute
+    --ExecutePreprocessor.kernel_name=sysml --ExecutePreprocessor.timeout=60
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: specforge
+          POSTGRES_PASSWORD: specforge
+          POSTGRES_DB: specforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U specforge -d specforge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install Python deps
+        run: uv sync
+
+      # docs/devenv.md §2 — the compile gate. Official action: apt-installs `omc` on Linux and
+      # puts it on PATH.
+      - name: Install OpenModelica
+        uses: OpenModelica/setup-openmodelica@v1.0
+        with:
+          version: "stable"
+          architecture: "64"
+          packages: |
+            'omc'
+
+      # docs/devenv.md §3 — the real headless SysML v2 option (D11): conda-forge's
+      # jupyter-sysml-kernel, mirroring the local install this session.
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: sysml
+
+      - name: Install the SysML v2 Jupyter kernel
+        shell: bash -l {0}
+        run: |
+          conda install -n sysml -c conda-forge \
+            jupyter-sysml-kernel python=3.* jupyterlab=4.* graphviz=2.* nodejs=* -y
+          echo "$CONDA_PREFIX/envs/sysml/bin" >> "$GITHUB_PATH"
+          # D12: the kernelspec invokes a bare `java` with no version pin of its own — force the
+          # conda env's own JDK ahead of anything else on PATH, the exact fix this needed locally.
+          echo "JAVA_HOME=$CONDA_PREFIX/envs/sysml" >> "$GITHUB_ENV"
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: mypy --strict (core, emit)
+        run: uv run mypy src/spec_forge/core src/spec_forge/emit
+
+      - name: mypy (project)
+        run: uv run mypy src/spec_forge
+
+      - name: pytest
+        run: uv run pytest
+
+      - name: spec-forge db upgrade
+        run: uv run spec-forge db upgrade
+
+      - name: spec-forge doctor
+        run: uv run spec-forge doctor
+
+  decisions:
+    runs-on: ubuntu-latest
+    env:
+      # git log --date=short renders each commit in its own recorded offset (this repo's commits
+      # are +0530/IST) — pinning the runner's own clock to the same zone keeps "today" consistent
+      # with what the team (and a judge reading git log) would call today, instead of a UTC
+      # runner misreading a commit made in the 1:00-5:30am IST window as yesterday.
+      TZ: Asia/Kolkata
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check DECISIONS.md is committed every day
+        run: python3 scripts/check_decisions_daily.py
