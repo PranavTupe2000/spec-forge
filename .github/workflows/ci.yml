@@ -44,7 +44,12 @@ jobs:
         run: uv sync
 
       # docs/devenv.md §2 — the compile gate. Official action: apt-installs `omc` on Linux and
-      # puts it on PATH.
+      # puts it on PATH. Unlike the Windows installer, `apt install omc` does NOT bundle MSL —
+      # confirmed by a real CI failure: `loadModel(Modelica)` failed with "Failed to load package
+      # Modelica ... using MODELICAPATH", and omc's own suggestion named the exact version this
+      # build resolves by default. `libraries:` pre-installs it via the package manager so
+      # `omc.check_msl_available()` (and any test that loads MSL) doesn't need a live network
+      # installPackage call inside the test run.
       - name: Install OpenModelica
         uses: OpenModelica/setup-openmodelica@v1.0
         with:
@@ -52,6 +57,8 @@ jobs:
           architecture: "64"
           packages: |
             'omc'
+          libraries: |
+            'Modelica 4.1.0+maint.om'
 
       # docs/devenv.md §3 — the real headless SysML v2 option (D11): conda-forge's
       # jupyter-sysml-kernel, mirroring the local install this session.
@@ -66,10 +73,16 @@ jobs:
         run: |
           conda install -n sysml -c conda-forge \
             jupyter-sysml-kernel python=3.* jupyterlab=4.* graphviz=2.* nodejs=* -y
-          echo "$CONDA_PREFIX/envs/sysml/bin" >> "$GITHUB_PATH"
+          # $CONDA_PREFIX is already the activated `sysml` env's own path (set by
+          # activate-environment: sysml above) — NOT the miniconda root. A real CI run caught
+          # this: with the wrong "$CONDA_PREFIX/envs/sysml/bin" (doubly-nested, doesn't exist),
+          # `jupyter` never resolved and every real-kernel test skipped at collection time.
+          echo "$CONDA_PREFIX/bin" >> "$GITHUB_PATH"
           # D12: the kernelspec invokes a bare `java` with no version pin of its own — force the
           # conda env's own JDK ahead of anything else on PATH, the exact fix this needed locally.
-          echo "JAVA_HOME=$CONDA_PREFIX/envs/sysml" >> "$GITHUB_ENV"
+          # On Linux conda-forge's openjdk installs straight into the env prefix (no nested
+          # Library/ subdir the way Windows conda packages use).
+          echo "JAVA_HOME=$CONDA_PREFIX" >> "$GITHUB_ENV"
 
       - name: ruff check
         run: uv run ruff check .
